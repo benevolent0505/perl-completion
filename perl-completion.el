@@ -2090,8 +2090,8 @@ otherwise
                           with ret
                           for w in words
                           when (and (stringp w)
-                                    (string-match (concat "^" ac-target) w)
-                                    (not (string= ac-target w)))
+                                    (string-match (concat "^" ac-prefix) w)
+                                    (not (string= ac-prefix w)))
                           do (progn (push w ret)
                                     (incf count)
                                     (when (= count plcmp-ac-candidates-limit)
