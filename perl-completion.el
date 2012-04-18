@@ -404,7 +404,10 @@ directory is added to PERL5LIB when invoke completion commands."
     "reverse" "sqrt" "warn" "endprotoent" "getservbyname" "no" "rewinddir" "srand"
     "write" "endpwent" "getservbyport" "oct" "rindex" "stat" "y" "endservent" "getservent"
     "open" "rmdir" "study" "eof" "getsockname" "opendir" "s" "sub" "eval" "getsockopt"
-    "ord" "scalar" "substr"))
+    "ord" "scalar" "substr"
+    "say"
+    "state"
+    ))
 
 (defvar plcmp-builtin-variables
   '("$SIG{expr}" "%SIG" "$ENV{expr}" "%ENV" "%INC" "@_" "@INC" "@F" "ARGVOUT"
