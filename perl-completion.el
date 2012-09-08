@@ -341,6 +341,15 @@ directory is added to PERL5LIB when invoke completion commands."
   :type '(repeat (string :tag "perl lib directory"))
   :group 'perl-completion)
 
+(defcustom plcmp-perl-executable "perl"
+  "Location of perl executable"
+  :type 'string
+  :group 'perl-completion)
+
+(defcustom plcmp-perldoc-executable "perldoc"
+  "Location of perl executable"
+  :type 'string
+  :group 'perl-completion)
 
 ;;; log util
 (defvar plcmp-debug nil)
@@ -721,10 +730,10 @@ then execute BODY"
   (message "fetching installed modules...")
   (let* ((modules-str (shell-command-to-string
                        (concat
-                        "find `perl -e 'print join(q{ }, grep(!/^\.$/, @INC));'`"
+                        "find `" plcmp-perl-executable " -e 'print join(q{ }, grep(!/^\.$/, @INC));'`"
                         " -name '*.pm' -type f "
                         "| xargs egrep -h -o 'package [a-zA-Z0-9:]+;' "
-                        "| perl -nle 's/package\s+(.+);/$1/; print' "
+                        "| " plcmp-perl-executable " -nle 's/package\s+(.+);/$1/; print' "
                         "| sort "
                         "| uniq "
                         )))
@@ -760,10 +769,10 @@ then execute BODY"
       (with-current-buffer (get-buffer-create plcmp-installed-modules-buffer-name)
         (erase-buffer))
       (let* ((command "find")
-             (args (concat "`perl -e 'print join(q{ }, grep(!/^\.$/, @INC));'`"
+             (args (concat "`" plcmp-perl-executable " -e 'print join(q{ }, grep(!/^\.$/, @INC));'`"
                            " -name '*.pm' -type f "
                            "| xargs grep -E -h -o 'package [a-zA-Z0-9:]+;' "
-                           "| perl -nle 's/package\s+(.+);/$1/; print' "
+                           "| " plcmp-perl-executable " -nle 's/package\s+(.+);/$1/; print' "
                            "| sort "
                            "| uniq "))
              (proc (start-process-shell-command "installed perl modules"
@@ -874,7 +883,7 @@ If MODULE-NAME is not valid, returns `nil'"
   (when (plcmp-module-p module-name)
     (let ((modules-str
            (shell-command-to-string
-            (concat "perl -MClass::Inspector -e'use "
+            (concat plcmp-perl-executable " -MClass::Inspector -e'use "
                     module-name
                     "; print join \"\n\"=>@{Class::Inspector->methods("
                     module-name
@@ -889,7 +898,7 @@ If MODULE-NAME is not valid, returns `nil'"
 
 (defun plcmp-get-module-file-path (module-name)
   (plcmp-with-set-perl5-lib
-   (let* ((path (shell-command-to-string (concat "perldoc -ml " (shell-quote-argument module-name))))
+   (let* ((path (shell-command-to-string (concat plcmp-perldoc-executable " -ml " (shell-quote-argument module-name))))
           (path (plcmp-trim path)))
      (and (stringp path)
           (file-exists-p path)
@@ -1352,10 +1361,10 @@ point, after `plcmp-re-search-forward-fontify'")
 return buffer or nil unless process return 0"
   (require 'man)
   (let* ((manual-program (ecase type
-                           (module "perldoc")
+                           (module plcmp-perldoc-executable)
                            (man manual-program)
-                           (function "perldoc -f")
-                           (variable "perldoc perlvar")))
+                           (function (concat plcmp-perldoc-executable " -f"))
+                           (variable (concat plcmp-perldoc-executable " perlvar"))))
          (command (if (eq type 'variable)
                       manual-program
                     (concat manual-program " " topic)))
@@ -2228,7 +2237,7 @@ must be one of coding-system."
                 (perl-code perl-code))
     (plcmp-async-do
      :buffer-name buf-name
-     :command (plcmp-get-perl-command)
+     :command plcmp-perl-executable
      :args `("-e"
              ,perl-code)
      :callback callback
