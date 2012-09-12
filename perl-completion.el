@@ -29,7 +29,7 @@
 
 ;; Tested on Emacs 22
 ;;
-;; Thanks to rubikitch for integration with anything-show-completion.
+;; Thanks to rubikitch for integration with helm-show-completion.
 
 
 ;;; Commands:
@@ -39,7 +39,7 @@
 ;; -Completion Commands-
 ;;
 ;; [C-c C-c a] `plcmp-cmd-complete-all'
-;;       invoke anything with all completion sources.
+;;       invoke helm with all completion sources.
 ;;       difference between this command and `plcmp-cmd-smart-complete'
 ;;       is this command doesn't sort candidates smartly.
 
@@ -61,28 +61,28 @@
 ;;       this is the main command of perl-completion.el!!.
 
 ;; [C-c v] `plcmp-cmd-complete-variables'
-;;       invoke anything with only variables completion source.
+;;       invoke helm with only variables completion source.
 
 ;; [C-c a] `plcmp-cmd-complete-arrays'
-;;       invoke anything with only array completion source.
+;;       invoke helm with only array completion source.
 
 ;; [C-c h] `plcmp-cmd-complete-hashes'
-;;       invoke anything with only hash completion source.
+;;       invoke helm with only hash completion source.
 
 ;; [C-c f] `plcmp-cmd-complete-functions'
-;;       invoke anything with only function completion source.
+;;       invoke helm with only function completion source.
 
 ;; [C-c m] `plcmp-cmd-complete-methods'
-;;       invoke anything with only using module's methods completion source.
+;;       invoke helm with only using module's methods completion source.
 
 ;; [C-c i] `plcmp-cmd-complete-modules'
-;;       invoke anything with only installed modules completion source.
+;;       invoke helm with only installed modules completion source.
 
 
 ;; -Documents support commands-
 
 ;; [C-c d] `plcmp-cmd-show-doc'
-;;       invoke anything with installed modules and man pages about perl.
+;;       invoke helm with installed modules and man pages about perl.
 
 ;;       default action is "Show doc" that open selected condidate's document.
 
@@ -241,7 +241,7 @@
 
 ;;; Code:
 (require 'cl)
-(require 'anything) ; perl-completion.el uses `anything-aif' macro.
+(require 'helm) ; perl-completion.el uses `helm-aif' macro.
 (require 'cperl-mode)
 (require 'dabbrev)
 (require 'rx)
@@ -472,7 +472,7 @@ directory is added to PERL5LIB when invoke completion commands."
 
     map))
 
-(defvar plcmp-anything-map
+(defvar plcmp-helm-map
   (let ((map (make-sparse-keymap)))
       (define-key map (kbd "O") 'plcmp-acmd-occur)
       (define-key map (kbd "D") 'plcmp-acmd-show-doc)
@@ -482,7 +482,7 @@ directory is added to PERL5LIB when invoke completion commands."
       (define-key map (kbd "K") 'scroll-other-window-down)
       (define-key map (kbd "L") 'plcmp-acmd-persistent-look)
       (define-key map (kbd "M") 'plcmp-acmd-open-module-file)
-      (set-keymap-parent map anything-map)
+      (set-keymap-parent map helm-map)
 
       map))
 
@@ -562,7 +562,7 @@ then execute BODY"
     `(defun* ,(intern command-name) ,args
        (interactive)
        (unwind-protect
-           (let ((anything-map plcmp-anything-map))
+           (let ((helm-map plcmp-helm-map))
              (plcmp-with-set-perl5-lib
               (progn (plcmp-initialize-variables)
                      ,@body)))
@@ -591,7 +591,7 @@ then execute BODY"
   (string-match (concat "^" plcmp-perl-ident-re "$") s))
 
 (defsubst plcmp-notfound-p (s)
-  (anything-aif (string-match "^Can't locate [^ \t]+ in" s)
+  (helm-aif (string-match "^Can't locate [^ \t]+ in" s)
       (prog1 it
         (plcmp-log "module notfound errmsg: %s" s))))
 
@@ -664,7 +664,7 @@ then execute BODY"
 
 ;;; initial-input
 (defvar plcmp-initial-input "")
-(defvar plcmp-real-initial-input "real initial-input if required `anything-match-plugin' initial-input is not real initial-input")
+(defvar plcmp-real-initial-input "real initial-input if required `helm-match-plugin' initial-input is not real initial-input")
 
 (defun plcmp--fullname ()
   (save-excursion
@@ -697,7 +697,7 @@ then execute BODY"
            (initial-input
             (regexp-quote
              (concat real-initial-input
-                     (if (and (featurep 'anything-match-plugin)
+                     (if (and (featurep 'helm-match-plugin)
                               (not (string-equal real-initial-input "")))
                          " "
                        "")))))
@@ -935,7 +935,7 @@ If MODULE-NAME is not valid, returns `nil'"
 ;; module-name -> source
 (defvar plcmp--mk-module-source-name " Methods")
 (defsubst plcmp--mk-module-source (module-name)
-  (anything-aif (assoc-default module-name plcmp-module-methods-alist)
+  (helm-aif (assoc-default module-name plcmp-module-methods-alist)
       `((name . ,(concat module-name plcmp--mk-module-source-name))
         (action . (("Insert" . plcmp-insert)
                    ("Show doc" .
@@ -973,12 +973,12 @@ If MODULE-NAME is not valid, returns `nil'"
                    ("Add to kill-ring" . kill-new)
                    ("Insert source name" .
                     (lambda (candidate)
-                      (let ((name (plcmp-anything-get-current-source-name)))
+                      (let ((name (plcmp-helm-get-current-source-name)))
                         (and (stringp name)
                              (insert name)))))
                    ))
         (init . (lambda ()
-                  (with-current-buffer (anything-candidate-buffer 'global)
+                  (with-current-buffer (helm-candidate-buffer 'global)
                     (plcmp-insert-each-line ',it))))
         (candidates-in-buffer)
         (persistent-action . (lambda (candidate)
@@ -1019,7 +1019,7 @@ If MODULE-NAME is not valid, returns `nil'"
                                   (point-max))
             until (eobp)
             do (progn (when (plcmp--check-face faces)
-                        (anything-aif (cperl-word-at-point)
+                        (helm-aif (cperl-word-at-point)
                             (puthash it nil hash)))
                       (goto-char next-change)))
       (maphash (lambda (k v) (push k ret)) hash) ; remove-dups
@@ -1039,10 +1039,10 @@ If MODULE-NAME is not valid, returns `nil'"
 ;; cache
 (defvar plcmp-buffer-tick-hash (make-hash-table :test 'equal))
 (defun* plcmp-buffer-is-modified (&optional (buffer (current-buffer)))
-  "Return non-nil when BUFFER is modified since `anything' was invoked."
+  "Return non-nil when BUFFER is modified since `helm' was invoked."
   (let* ((key (concat (buffer-name buffer)
                       "/"
-                      (anything-attr 'name)))
+                      (helm-attr 'name)))
          (source-tick (or (gethash key plcmp-buffer-tick-hash) 0))
          (buffer-tick (buffer-chars-modified-tick buffer)))
     (prog1 (/= source-tick buffer-tick)
@@ -1080,7 +1080,7 @@ If MODULE-NAME is not valid, returns `nil'"
 
 (defun plcmp-other-perl-buffers-get-buffer-name ()
   "return buffer or nil"
-  (let ((source-name (anything-attr 'name)))
+  (let ((source-name (helm-attr 'name)))
     (when (string-match (rx " *" (group (* not-newline)) "*" eol)
                         source-name)
       (let ((buffer-name (match-string 1 source-name)))
@@ -1111,13 +1111,13 @@ If MODULE-NAME is not valid, returns `nil'"
      . (lambda ()
          (let ((words
                 (with-current-buffer (get-buffer ,buffer-name)
-                  (anything-aif (and (not (plcmp-buffer-is-modified))
+                  (helm-aif (and (not (plcmp-buffer-is-modified))
                                      (plcmp-get-other-perl-buffers-cache ,source-name ,buffer-name))
                       (prog1 it
                         (plcmp-log "return cache buffer: %s source-name: %s " ,buffer-name ,source-name))
                     (prog1 (plcmp-add-to-other-perl-buffers-cache-hash ,source-name ',faces ,buffer-name)
                       (plcmp-log "modified: %s" ,buffer-name))))))
-           (with-current-buffer (anything-candidate-buffer 'global)
+           (with-current-buffer (helm-candidate-buffer 'global)
              (plcmp-insert-each-line words)))))
     (candidates-in-buffer)
     (persistent-action
@@ -1219,31 +1219,31 @@ point, after `plcmp-re-search-forward-fontify'")
   (run-hooks 'plcmp--command-cleanup-hook))
 
 ;;;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-;;;; Anything
+;;;; Helm
 ;;;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-(defun plcmp--anything-get-current-source-name ()
+(defun plcmp--helm-get-current-source-name ()
   "Return the source name for the current selection."
   (declare (special source))
-  ;; The name `anything-get-current-source' should be used in init function etc.
-  (if (and (boundp 'anything-source-name) (stringp anything-source-name))
-      anything-source-name
-    (with-current-buffer (anything-buffer-get)
+  ;; The name `helm-get-current-source' should be used in init function etc.
+  (if (and (boundp 'helm-source-name) (stringp helm-source-name))
+      helm-source-name
+    (with-current-buffer (helm-buffer-get)
       ;; This goto-char shouldn't be necessary, but point is moved to
       ;; point-min somewhere else which shouldn't happen.
-      (goto-char (overlay-start anything-selection-overlay))
-      (let* ((header-pos (anything-get-previous-header-pos)))
+      (goto-char (overlay-start helm-selection-overlay))
+      (let* ((header-pos (helm-get-previous-header-pos)))
         (save-excursion
           (assert header-pos)
           (goto-char header-pos)
           (prog1 (buffer-substring-no-properties
                   (line-beginning-position) (line-end-position))
-            (plcmp-log "plcmp-anything-get-current-source-name: %s"
+            (plcmp-log "plcmp-helm-get-current-source-name: %s"
                        (buffer-substring-no-properties
                         (line-beginning-position) (line-end-position)))))))))
 
 (defun plcmp-get-current-module-name ()
-  (let* ((module (plcmp--anything-get-current-source-name)))
+  (let* ((module (plcmp--helm-get-current-source-name)))
     (when (string-match
            (rx-to-string `(and
                            bol
@@ -1256,7 +1256,7 @@ point, after `plcmp-re-search-forward-fontify'")
 ;;;TODO
 (defun plcmp-completion-get-man-buffer (candidate)
   "return manpage buffer ,called in completion source action"
-  (let* ((name (plcmp--anything-get-current-source-name))
+  (let* ((name (plcmp--helm-get-current-source-name))
          (ret (cond
                ((string-equal name "builtin functions")
                 (plcmp-get-man-buffer candidate 'function))
@@ -1279,16 +1279,16 @@ point, after `plcmp-re-search-forward-fontify'")
       (action . (("Insert" . plcmp-insert)
                  ("Show man" .
                   (lambda (candidate)
-                    (anything-aif (plcmp-completion-get-man-buffer candidate)
+                    (helm-aif (plcmp-completion-get-man-buffer candidate)
                         (switch-to-buffer it))))
                  ("Add to kill-ring" . kill-new)
                  ("Insert source name" .
                   (lambda (candidate)
-                    (let ((name (plcmp-anything-get-current-source-name)))
+                    (let ((name (plcmp-helm-get-current-source-name)))
                       (and (stringp name)
                            (insert name)))))
                  ))))
-(add-to-list 'anything-type-attributes plcmp-type-completion)
+(add-to-list 'helm-type-attributes plcmp-type-completion)
 
 (defvar plcmp-type-completion-method
     '(plcmp-completion-method
@@ -1309,11 +1309,11 @@ point, after `plcmp-re-search-forward-fontify'")
                  ("Add to kill-ring" . kill-new)
                  ("Insert source name" .
                   (lambda (candidate)
-                    (let ((name (plcmp-anything-get-current-source-name)))
+                    (let ((name (plcmp-helm-get-current-source-name)))
                       (and (stringp name)
                            (insert name)))))
                  ))))
-(add-to-list 'anything-type-attributes plcmp-type-completion-method)
+(add-to-list 'helm-type-attributes plcmp-type-completion-method)
 
 (defvar plcmp-type-man
   '(plcmp-doc
@@ -1340,7 +1340,7 @@ point, after `plcmp-re-search-forward-fontify'")
 (defvar plcmp-type-perldoc
   '(plcmp-perldoc
     (action . ())))
-(add-to-list 'anything-type-attributes plcmp-type-man)
+(add-to-list 'helm-type-attributes plcmp-type-man)
 
 (defun plcmp-insert (candidate)
   (delete-backward-char (length plcmp-real-initial-input))
@@ -1401,13 +1401,13 @@ return buffer or nil unless process return 0"
         (find-file-noselect path)))))
 
 (defun* plcmp-open-module-file (module-name &optional (show-buffer-fn 'switch-to-buffer))
-  (anything-aif (plcmp--find-module-file-no-select module-name)
+  (helm-aif (plcmp--find-module-file-no-select module-name)
       (funcall show-buffer-fn it)
     (message "can't find %s" module-name)))
 
 ;;; sources
 ;; completion
-(defvar plcmp-anything-source-completion-using-modules
+(defvar plcmp-helm-source-completion-using-modules
   `((name . "using modules")
     (action . (("Insert" . plcmp-insert)
                ("Show doc" .
@@ -1436,7 +1436,7 @@ return buffer or nil unless process return 0"
                                           'switch-to-buffer-other-frame)))
                ("Add to kill-ring" . kill-new)))
     (init . (lambda ()
-              (with-current-buffer (anything-candidate-buffer 'global)
+              (with-current-buffer (helm-candidate-buffer 'global)
                 (when plcmp-using-modules
                   (plcmp-insert-each-line plcmp-using-modules)))))
     (candidates-in-buffer)
@@ -1445,7 +1445,7 @@ return buffer or nil unless process return 0"
                            (plcmp-re-search-forward-fontify (regexp-quote candidate))))
     ))
 
-(defvar plcmp-anything-source-completion-builtin-functions
+(defvar plcmp-helm-source-completion-builtin-functions
   `((name . "builtin functions")
     (action . (("Insert" . plcmp-insert)
                ("Show doc" .
@@ -1466,7 +1466,7 @@ return buffer or nil unless process return 0"
                              nil))))
                ("Add to kill-ring" . kill-new)))
     (init . (lambda ()
-              (with-current-buffer (anything-candidate-buffer 'global)
+              (with-current-buffer (helm-candidate-buffer 'global)
                 (plcmp-insert-each-line plcmp-builtin-functions))))
     (candidates-in-buffer)
     (persistent-action . (lambda (candidate)
@@ -1474,7 +1474,7 @@ return buffer or nil unless process return 0"
                            (plcmp-re-search-forward-fontify (regexp-quote candidate))))
      ))
 
-(defvar plcmp-anything-source-completion-builtin-variables
+(defvar plcmp-helm-source-completion-builtin-variables
   `((name . "builtin variables")
     (action . (("Insert" . plcmp-insert)
                ("Show doc" .
@@ -1504,7 +1504,7 @@ return buffer or nil unless process return 0"
                              nil))))
                ("Add to kill-ring" . kill-new)))
     (init . (lambda ()
-              (with-current-buffer (anything-candidate-buffer 'global)
+              (with-current-buffer (helm-candidate-buffer 'global)
                 (plcmp-insert-each-line plcmp-builtin-variables))))
     (candidates-in-buffer)
     (search . ((lambda (re arg1 arg2)
@@ -1514,7 +1514,7 @@ return buffer or nil unless process return 0"
                            (plcmp-re-search-forward-fontify (regexp-quote candidate))))
     ))
 
-(defvar plcmp-anything-source-completion-installed-modules
+(defvar plcmp-helm-source-completion-installed-modules
   `((name . "installed modules")
     (action . (("Insert" . plcmp-insert)
                ("Show doc" .
@@ -1543,7 +1543,7 @@ return buffer or nil unless process return 0"
                                           'switch-to-buffer-other-frame)))
                ("Add to kill-ring" . kill-new)))
     (init . (lambda ()
-              (with-current-buffer (anything-candidate-buffer 'global)
+              (with-current-buffer (helm-candidate-buffer 'global)
                 (let ((installed-modules (plcmp-get-installed-modules)))
                   (when installed-modules
                     (plcmp-insert-each-line installed-modules))))))
@@ -1553,7 +1553,7 @@ return buffer or nil unless process return 0"
                            (plcmp-re-search-forward-fontify (regexp-quote candidate))))
     ))
 
-(defvar plcmp-anything-source-completion-buffer-dabbrevs
+(defvar plcmp-helm-source-completion-buffer-dabbrevs
   `((name . "buffer dabbrevs")
     (action . (("Insert" . plcmp-insert)
                ("Occur" .
@@ -1565,21 +1565,21 @@ return buffer or nil unless process return 0"
     (init . (lambda ()
               (let* ((words (plcmp-get-buffer-dabbrevs))
                      (words (delete plcmp-real-initial-input words)))
-                (with-current-buffer (anything-candidate-buffer 'global)
+                (with-current-buffer (helm-candidate-buffer 'global)
                   (plcmp-insert-each-line words)))))
     (candidates-in-buffer)
     (persistent-action . (lambda (candidate)
-                           (switch-to-buffer anything-current-buffer)
+                           (switch-to-buffer helm-current-buffer)
                            (plcmp-re-search-forward-fontify (regexp-quote candidate))))
     ))
 
 
 ;; man, perldoc
-(defvar plcmp-anything-source-doc-man-pages
+(defvar plcmp-helm-source-doc-man-pages
   '((name . "perl man pages")
     (action . (("Show man" . woman)))
     (init . (lambda ()
-              (with-current-buffer (anything-candidate-buffer 'global)
+              (with-current-buffer (helm-candidate-buffer 'global)
                 (plcmp-insert-each-line plcmp-man-pages))))
     (candidates-in-buffer)
     (persistent-action . (lambda (candidate)
@@ -1587,7 +1587,7 @@ return buffer or nil unless process return 0"
                            (plcmp-re-search-forward-fontify (regexp-quote candidate))))
     ))
 
-(defvar plcmp-anything-source-doc-using-modules
+(defvar plcmp-helm-source-doc-using-modules
   '((name . "using modules")
     (action . (("Show doc" .
                 (lambda (candidate)
@@ -1616,7 +1616,7 @@ return buffer or nil unless process return 0"
                                           'switch-to-buffer-other-frame)))
                ("Add to kill-ring" . kill-new)))
     (init . (lambda ()
-              (with-current-buffer (anything-candidate-buffer 'global)
+              (with-current-buffer (helm-candidate-buffer 'global)
                 (plcmp-insert-each-line plcmp-using-modules))))
     (candidates-in-buffer)
     (persistent-action . (lambda (candidate)
@@ -1624,7 +1624,7 @@ return buffer or nil unless process return 0"
                            (plcmp-re-search-forward-fontify (regexp-quote candidate))))
     ))
 
-(defvar plcmp-anything-source-doc-installed-modules
+(defvar plcmp-helm-source-doc-installed-modules
   '((name . "installed modules")
     (action . (("Show doc" .
                 (lambda (candidate)
@@ -1652,7 +1652,7 @@ return buffer or nil unless process return 0"
                                           'switch-to-buffer-other-frame)))
                ("Add to kill-ring" . kill-new)))
     (init . (lambda ()
-              (with-current-buffer (anything-candidate-buffer 'global)
+              (with-current-buffer (helm-candidate-buffer 'global)
                 (plcmp-insert-each-line plcmp-installed-modules))))
     (candidates-in-buffer)
     (persistent-action . (lambda (candidate)
@@ -1678,7 +1678,7 @@ return buffer or nil unless process return 0"
                            (real command))
                       `(,display . ,real))))))
 
-(defvar plcmp-anything-source-menu
+(defvar plcmp-helm-source-menu
   `((name . "perl-completion menu")
     (action ("Call interactively" . (lambda (command-name)
                                       (call-interactively (intern command-name))))
@@ -1698,11 +1698,11 @@ return buffer or nil unless process return 0"
 ;;; complete-all
 (defvar plcmp-completion-all-static-sources
   '(
-    plcmp-anything-source-completion-buffer-dabbrevs
-    plcmp-anything-source-completion-builtin-variables
-    plcmp-anything-source-completion-builtin-functions
-    plcmp-anything-source-completion-using-modules
-    plcmp-anything-source-completion-installed-modules
+    plcmp-helm-source-completion-buffer-dabbrevs
+    plcmp-helm-source-completion-builtin-variables
+    plcmp-helm-source-completion-builtin-functions
+    plcmp-helm-source-completion-using-modules
+    plcmp-helm-source-completion-installed-modules
     ))
 
 (defun plcmp-get-sources-for-complete-all ()
@@ -1715,18 +1715,18 @@ return buffer or nil unless process return 0"
    plcmp-completion-all-static-sources))
 
 (define-plcmp-command complete-all ()
-  (anything (plcmp-get-sources-for-complete-all) plcmp-initial-input))
+  (helm (plcmp-get-sources-for-complete-all) plcmp-initial-input))
 
 
 ;;; smart-complete
 
 (defvar plcmp-completion-smart-complete-static-sources
   '(
-    plcmp-anything-source-completion-buffer-dabbrevs
-    plcmp-anything-source-completion-builtin-variables
-    plcmp-anything-source-completion-builtin-functions
-    plcmp-anything-source-completion-using-modules
-    plcmp-anything-source-completion-installed-modules
+    plcmp-helm-source-completion-buffer-dabbrevs
+    plcmp-helm-source-completion-builtin-variables
+    plcmp-helm-source-completion-builtin-functions
+    plcmp-helm-source-completion-using-modules
+    plcmp-helm-source-completion-installed-modules
     ))
 
 (defun plcmp--sources-for-smart-complete ()
@@ -1864,13 +1864,13 @@ otherwise
 (define-plcmp-command smart-complete ()
   (plcmp-log "smart-complete called line: %s`!!'"
              (buffer-substring (point-at-bol) (point)))
-  (anything (plcmp-get-sources-for-smart-complete) plcmp-initial-input))
+  (helm (plcmp-get-sources-for-smart-complete) plcmp-initial-input))
 
 
 ;;; complete-variables
 (defvar plcmp-completion-variable-static-sources
   '(
-    plcmp-anything-source-completion-builtin-variables
+    plcmp-helm-source-completion-builtin-variables
     ))
 
 (defun plcmp-get-sources-for-complete-variables ()
@@ -1880,53 +1880,53 @@ otherwise
    ))
 
 (define-plcmp-command complete-variables ()
-  (anything (plcmp-get-sources-for-complete-variables) plcmp-initial-input))
+  (helm (plcmp-get-sources-for-complete-variables) plcmp-initial-input))
 
 ;;; complete-arrays
 (define-plcmp-command complete-arrays ()
-  (anything (plcmp-get-sources-other-perl-buffers-arrays) plcmp-initial-input))
+  (helm (plcmp-get-sources-other-perl-buffers-arrays) plcmp-initial-input))
 
 ;;; complete-hashes
 (define-plcmp-command complete-hashes ()
-  (anything (plcmp-get-sources-other-perl-buffers-hashes) plcmp-initial-input))
+  (helm (plcmp-get-sources-other-perl-buffers-hashes) plcmp-initial-input))
 
 ;;; complete-functions
 (defun plcmp-get-sources-for-complete-functions ()
   (append
-   (list plcmp-anything-source-completion-builtin-functions)
+   (list plcmp-helm-source-completion-builtin-functions)
    (plcmp-get-sources-other-perl-buffers-functions)
    (plcmp-get-sources-methods plcmp-using-modules)))
 
 (define-plcmp-command complete-functions ()
-  (anything (plcmp-get-sources-for-complete-functions) plcmp-initial-input))
+  (helm (plcmp-get-sources-for-complete-functions) plcmp-initial-input))
 
 ;;; complete-methods
 (define-plcmp-command complete-methods ()
-  (anything (plcmp-get-sources-methods plcmp-using-modules) plcmp-initial-input))
+  (helm (plcmp-get-sources-methods plcmp-using-modules) plcmp-initial-input))
 
 ;;; complete-modules
 (define-plcmp-command complete-modules ()
-  (anything '(plcmp-anything-source-completion-using-modules
-              plcmp-anything-source-completion-installed-modules)
+  (helm '(plcmp-helm-source-completion-using-modules
+              plcmp-helm-source-completion-installed-modules)
             plcmp-initial-input))
 
 
 ;;; document
 (defvar plcmp-show-doc-sources
   '(
-    plcmp-anything-source-doc-using-modules
-    plcmp-anything-source-doc-man-pages
-    plcmp-anything-source-doc-installed-modules
+    plcmp-helm-source-doc-using-modules
+    plcmp-helm-source-doc-man-pages
+    plcmp-helm-source-doc-installed-modules
     ))
 (define-plcmp-command show-doc ()
-  (anything plcmp-show-doc-sources))
+  (helm plcmp-show-doc-sources))
 
 (define-plcmp-command show-doc-at-point ()
-  (anything plcmp-show-doc-sources (or (thing-at-point 'symbol) "")))
+  (helm plcmp-show-doc-sources (or (thing-at-point 'symbol) "")))
 ;;; other commands
 (defun plcmp-cmd-menu ()
   (interactive)
-  (anything '(plcmp-anything-source-menu)))
+  (helm '(plcmp-helm-source-menu)))
 
 (defun plcmp-cmd-clear-all-caches ()
   (interactive)
@@ -2017,22 +2017,22 @@ otherwise
 
 
 ;;;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-;;;; Anything commands
+;;;; Helm commands
 ;;;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ;; prefix: plcmp-acmd-
-;; plcmp-acmd == plcmp-anything-command
+;; plcmp-acmd == plcmp-helm-command
 
 ;; util
 (defun plcmp-re-select-action (action-name-re)
-  (let* ((actions (anything-attr 'action))
+  (let* ((actions (helm-attr 'action))
          (action (assoc-if (lambda (s) (string-match action-name-re s))
                            actions)))
     (cond
      ((and action (cdr action))
-      (setq anything-saved-action (cdr action))
-      (anything-exit-minibuffer))
+      (setq helm-saved-action (cdr action))
+      (helm-exit-minibuffer))
      (t
-      (message "no action-name %s current source %s" action-name-re (anything-attr 'name))))))
+      (message "no action-name %s current source %s" action-name-re (helm-attr 'name))))))
 
 (defun plcmp-acmd-occur ()
   (interactive)
@@ -2048,7 +2048,7 @@ otherwise
 
 (defun plcmp-acmd-persistent-look ()
   (interactive)
-  (anything-execute-persistent-action))
+  (helm-execute-persistent-action))
 
 (defun plcmp-acmd-open-module-file ()
   (interactive)
@@ -2061,11 +2061,11 @@ otherwise
                 (show-fn (or pop-to-buffer 'pop-to-buffer 'switch-to-buffer)))
     (if (and (numberp looking-point)
              (bufferp buffer))
-        (progn (setq anything-saved-action
+        (progn (setq helm-saved-action
                      (lambda (ignore)
                        (funcall show-fn buffer)
                        (goto-char looking-point)))
-               (anything-exit-minibuffer))
+               (helm-exit-minibuffer))
       (message "not looking buffer"))))
 
 
@@ -2266,19 +2266,19 @@ must be one of coding-system."
 
 
 ;;;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-;;;; Integration with anything-show-completion
+;;;; Integration with helm-show-completion
 ;;;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ;; rubikitch's patch. thanks!! :)
-(when (require 'anything-show-completion nil t)
-  (dolist (f '(plcmp-cmd-smart-complete
-               plcmp-cmd-complete-all
-               plcmp-cmd-complete-methods
-               plcmp-cmd-complete-hashes
-               plcmp-cmd-complete-functions
-               plcmp-cmd-complete-variables
-               plcmp-cmd-complete-modules
-               plcmp-cmd-complete-arrays))
-    (use-anything-show-completion f '(length plcmp-real-initial-input))))
+;; (when (require 'helm-show-completion nil t)
+;;   (dolist (f '(plcmp-cmd-smart-complete
+;;                plcmp-cmd-complete-all
+;;                plcmp-cmd-complete-methods
+;;                plcmp-cmd-complete-hashes
+;;                plcmp-cmd-complete-functions
+;;                plcmp-cmd-complete-variables
+;;                plcmp-cmd-complete-modules
+;;                plcmp-cmd-complete-arrays))
+;;     (use-helm-show-completion f '(length plcmp-real-initial-input))))
 
 ;;;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ;;;; Test
@@ -2311,7 +2311,7 @@ must be one of coding-system."
       (expect nil
         (let ((plcmp-module-methods-alist nil))
           (plcmp--mk-module-source "test")))
-      (expect '((name . "module Methods") (action ("Insert" . plcmp-insert) ("Show doc" lambda (candidate) (let* ((module (plcmp-get-current-module-name)) (buf (plcmp-get-man-buffer module (quote module)))) (save-selected-window (pop-to-buffer buf)))) ("Show doc and go" lambda (candidate) (let* ((module (plcmp-get-current-module-name)) (buf (plcmp-get-man-buffer module (quote module)))) (pop-to-buffer buf))) ("Open module file" lambda (method) (let ((module (plcmp-get-current-module-name))) (plcmp-open-module-file module))) ("Open module file other window" lambda (method) (let ((module-name (plcmp-get-current-module-name))) (plcmp-open-module-file module-name (quote pop-to-buffer)))) ("Open module file other frame" lambda (candidate) (let ((module-name (plcmp-get-current-module-name))) (plcmp-open-module-file module-name (quote switch-to-buffer-other-frame)))) ("Occur module file" lambda (candidate) (let ((module-name (plcmp-get-current-module-name))) (plcmp-open-module-file module-name (quote switch-to-buffer)) (funcall (plcmp-get-occur-fn) candidate nil))) ("Add to kill-ring" . kill-new) ("Insert source name" lambda (candidate) (let ((name (plcmp-anything-get-current-source-name))) (and (stringp name) (insert name))))) (init lambda nil (with-current-buffer (anything-candidate-buffer (quote global)) (plcmp-insert-each-line (quote ("method" "method2"))))) (candidates-in-buffer) (persistent-action lambda (candidate) (let ((module-name (plcmp-get-current-module-name))) (plcmp-open-doc module-name) (plcmp-re-search-forward-fontify (regexp-quote candidate)))))
+      (expect '((name . "module Methods") (action ("Insert" . plcmp-insert) ("Show doc" lambda (candidate) (let* ((module (plcmp-get-current-module-name)) (buf (plcmp-get-man-buffer module (quote module)))) (save-selected-window (pop-to-buffer buf)))) ("Show doc and go" lambda (candidate) (let* ((module (plcmp-get-current-module-name)) (buf (plcmp-get-man-buffer module (quote module)))) (pop-to-buffer buf))) ("Open module file" lambda (method) (let ((module (plcmp-get-current-module-name))) (plcmp-open-module-file module))) ("Open module file other window" lambda (method) (let ((module-name (plcmp-get-current-module-name))) (plcmp-open-module-file module-name (quote pop-to-buffer)))) ("Open module file other frame" lambda (candidate) (let ((module-name (plcmp-get-current-module-name))) (plcmp-open-module-file module-name (quote switch-to-buffer-other-frame)))) ("Occur module file" lambda (candidate) (let ((module-name (plcmp-get-current-module-name))) (plcmp-open-module-file module-name (quote switch-to-buffer)) (funcall (plcmp-get-occur-fn) candidate nil))) ("Add to kill-ring" . kill-new) ("Insert source name" lambda (candidate) (let ((name (plcmp-helm-get-current-source-name))) (and (stringp name) (insert name))))) (init lambda nil (with-current-buffer (helm-candidate-buffer (quote global)) (plcmp-insert-each-line (quote ("method" "method2"))))) (candidates-in-buffer) (persistent-action lambda (candidate) (let ((module-name (plcmp-get-current-module-name))) (plcmp-open-doc module-name) (plcmp-re-search-forward-fontify (regexp-quote candidate)))))
         (let ((plcmp-module-methods-alist '(("module" . ("method" "method2")))))
           (plcmp--mk-module-source "module")))
 
@@ -2323,7 +2323,7 @@ must be one of coding-system."
           t))
 
       (desc "plcmp-sort-sources")
-      (expect 'plcmp-anything-source-completion-builtin-variables
+      (expect 'plcmp-helm-source-completion-builtin-variables
         (car (plcmp-re-sort-sources "variables" plcmp-completion-all-static-sources)))
 
       (desc "plcmp--get-lib-path")
