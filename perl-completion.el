@@ -2085,7 +2085,7 @@ otherwise
 ;; ac == auto-complete
 (defvar plcmp-ac-candidates-limit 1000)
 (defvar ac-source-perl-completion
-  '((candidates . plcmp-ac-candidates)))
+  '((candidates . plcmp-ac-make-cands)))
 
 (defvar ac-source-perl-completion-patial
   '((candidates . plcmp-ac-candidates-patial)))
