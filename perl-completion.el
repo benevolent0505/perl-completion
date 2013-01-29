@@ -242,6 +242,7 @@
 ;;; Code:
 (require 'cl)
 (require 'helm) ; perl-completion.el uses `helm-aif' macro.
+(require 'helm-elisp) ; to use `with-helm-show-completion' macro.
 (require 'cperl-mode)
 (require 'dabbrev)
 (require 'rx)
@@ -1715,7 +1716,8 @@ return buffer or nil unless process return 0"
    plcmp-completion-all-static-sources))
 
 (define-plcmp-command complete-all ()
-  (helm (plcmp-get-sources-for-complete-all) plcmp-initial-input))
+  (with-helm-show-completion (- (+ (point) 1) (length plcmp-initial-input)) (point)
+    (helm (plcmp-get-sources-for-complete-all) plcmp-initial-input)))
 
 
 ;;; smart-complete
@@ -1864,7 +1866,8 @@ otherwise
 (define-plcmp-command smart-complete ()
   (plcmp-log "smart-complete called line: %s`!!'"
              (buffer-substring (point-at-bol) (point)))
-  (helm (plcmp-get-sources-for-smart-complete) plcmp-initial-input))
+  (with-helm-show-completion (- (+ (point) 1) (length plcmp-initial-input)) (point)
+    (helm (plcmp-get-sources-for-smart-complete) plcmp-initial-input)))
 
 
 ;;; complete-variables
@@ -1880,15 +1883,19 @@ otherwise
    ))
 
 (define-plcmp-command complete-variables ()
-  (helm (plcmp-get-sources-for-complete-variables) plcmp-initial-input))
+  (with-helm-show-completion (- (+ (point) 1) (length plcmp-initial-input)) (point)
+    (helm (plcmp-get-sources-for-complete-variables) plcmp-initial-input)))
+
 
 ;;; complete-arrays
 (define-plcmp-command complete-arrays ()
-  (helm (plcmp-get-sources-other-perl-buffers-arrays) plcmp-initial-input))
+  (with-helm-show-completion (- (+ (point) 1) (length plcmp-initial-input)) (point)
+  (helm (plcmp-get-sources-other-perl-buffers-arrays) plcmp-initial-input)))
 
 ;;; complete-hashes
 (define-plcmp-command complete-hashes ()
-  (helm (plcmp-get-sources-other-perl-buffers-hashes) plcmp-initial-input))
+  (with-helm-show-completion (- (+ (point) 1) (length plcmp-initial-input)) (point)
+    (helm (plcmp-get-sources-other-perl-buffers-hashes) plcmp-initial-input)))
 
 ;;; complete-functions
 (defun plcmp-get-sources-for-complete-functions ()
@@ -1898,17 +1905,21 @@ otherwise
    (plcmp-get-sources-methods plcmp-using-modules)))
 
 (define-plcmp-command complete-functions ()
-  (helm (plcmp-get-sources-for-complete-functions) plcmp-initial-input))
+  (with-helm-show-completion (- (+ (point) 1) (length plcmp-initial-input)) (point)
+    (helm (plcmp-get-sources-for-complete-functions) plcmp-initial-input)))
+
 
 ;;; complete-methods
 (define-plcmp-command complete-methods ()
-  (helm (plcmp-get-sources-methods plcmp-using-modules) plcmp-initial-input))
+  (with-helm-show-completion (- (+ (point) 1) (length plcmp-initial-input)) (point)
+    (helm (plcmp-get-sources-methods plcmp-using-modules) plcmp-initial-input)))
 
 ;;; complete-modules
 (define-plcmp-command complete-modules ()
+  (with-helm-show-completion (- (+ (point) 1) (length plcmp-initial-input)) (point)
   (helm '(plcmp-helm-source-completion-using-modules
               plcmp-helm-source-completion-installed-modules)
-            plcmp-initial-input))
+            plcmp-initial-input)))
 
 
 ;;; document
@@ -2265,20 +2276,6 @@ must be one of coding-system."
                beg end)))
 
 
-;;;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-;;;; Integration with helm-show-completion
-;;;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-;; rubikitch's patch. thanks!! :)
-(when (require 'helm-show-completion nil t)
-  (dolist (f '(plcmp-cmd-smart-complete
-               plcmp-cmd-complete-all
-               plcmp-cmd-complete-methods
-               plcmp-cmd-complete-hashes
-               plcmp-cmd-complete-functions
-               plcmp-cmd-complete-variables
-               plcmp-cmd-complete-modules
-               plcmp-cmd-complete-arrays))
-    (use-helm-show-completion f '(length plcmp-real-initial-input))))
 
 ;;;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ;;;; Test
