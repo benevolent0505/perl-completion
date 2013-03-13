@@ -466,7 +466,6 @@ directory is added to PERL5LIB when invoke completion commands."
 
       ;; other
       (define-key map (kbd "C-c c") 'plcmp-cmd-clear-all-caches)
-      (define-key map (kbd "C-c C-f") 'plcmp-cmd-project-files)
       (define-key map (kbd "C-c C-c s") 'plcmp-cmd-show-environment)
       (define-key map (kbd "C-c C-c u") 'plcmp-cmd-update-check)
       (define-key map (kbd "C-c C-c d") 'plcmp-cmd-set-additional-lib-directory))
