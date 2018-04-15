@@ -1309,6 +1309,8 @@ point, after `plcmp-re-search-forward-fontify'")
                       (and (stringp name)
                            (insert name)))))
                  ))))
+(setq helm-type-command
+			(append helm-type-command '(("Completion" . plcmp-type-completion))))
 
 (defvar plcmp-type-completion-method
     '(plcmp-completion-method
@@ -1333,6 +1335,8 @@ point, after `plcmp-re-search-forward-fontify'")
                       (and (stringp name)
                            (insert name)))))
                  ))))
+(setq helm-type-command
+			(append helm-type-command '(("Completion-method" . plcmp-type-completion-method))))
 
 (defvar plcmp-type-man
   '(plcmp-doc
@@ -1355,6 +1359,8 @@ point, after `plcmp-re-search-forward-fontify'")
                                         (regexp-quote candidate)))))
                ("Insert man name" . insert)
                ("Add man name to kill-ring" . kill-new)))))
+(setq helm-type-command
+			(append helm-type-command '(("Man" . plcmp-type-man))))
 
 (defvar plcmp-type-perldoc
   '(plcmp-perldoc
