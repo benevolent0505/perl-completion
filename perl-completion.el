@@ -1311,7 +1311,7 @@ point, after `plcmp-re-search-forward-fontify'")
                  ))))
 ; (add-to-list 'helm-type-attributes plcmp-type-completion)
 (setq helm-type-command-actions
-			(append helm-type-command-actions 'plcmp-type-completion))
+			(append helm-type-command-actions '(plcmp-type-completion)))
 
 (defvar plcmp-type-completion-method
     '(plcmp-completion-method
@@ -1338,7 +1338,7 @@ point, after `plcmp-re-search-forward-fontify'")
                  ))))
 ; (add-to-list 'helm-type-attributes plcmp-type-completion-method)
 (setq helm-type-command-actions
-			(append helm-type-command-actions plcmp-type-completion-method))
+			(append helm-type-command-actions '(plcmp-type-completion-method)))
 
 (defvar plcmp-type-man
   '(plcmp-doc
@@ -1367,7 +1367,7 @@ point, after `plcmp-re-search-forward-fontify'")
     (action . ())))
 ; (add-to-list 'helm-type-attributes plcmp-type-man)
 (setq helm-type-command-actions
-			(append helm-type-command-actions 'plcmp-type-man))
+			(append helm-type-command-actions '(plcmp-type-man)))
 
 (defun plcmp-insert (candidate)
   (delete-backward-char (length plcmp-real-initial-input))
